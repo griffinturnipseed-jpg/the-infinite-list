@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'master@theinfinitelist.app';
+    }
+    match /submissions/{id} {
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['text','status','created'])
+        && request.resource.data.status == 'waiting'
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 2
+        && request.resource.data.text.size() <= 100
+        && request.resource.data.created == request.time;
+      allow update, delete: if isAdmin();
+    }
+  }
+}
